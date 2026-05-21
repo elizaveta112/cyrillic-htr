@@ -1,0 +1,18 @@
+raw_dir: data/raw
+interim_dir: data/interim
+processed_dir: data/processed
+
+train_tsv: data/raw/train.tsv
+test_tsv: data/raw/test.tsv
+
+train_split_tsv: data/processed/train_split.tsv
+val_split_tsv: data/processed/val_split.tsv
+test_split_tsv: data/processed/test_split.tsv
+
+vocab_path: data/processed/vocab.json
+
+image_height: 64
+max_width: 512
+
+val_size: 0.1
+random_seed: 42

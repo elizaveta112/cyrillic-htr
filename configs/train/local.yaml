@@ -1,0 +1,16 @@
+batch_size: 2
+num_workers: 0
+epochs: 1
+learning_rate: 0.0001
+weight_decay: 0.00001
+
+device: cpu
+mixed_precision: false
+
+save_dir: models/debug
+log_dir: reports/debug
+
+best_metric: val_cer
+minimize_metric: true
+
+mlflow_experiment_name: cyrillic-htr-local-debug

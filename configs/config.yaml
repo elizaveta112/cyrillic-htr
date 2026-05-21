@@ -1,0 +1,17 @@
+defaults:
+  - data: default
+  - model: crnn_ctc
+  - train: local
+  - infer: default
+  - logger: mlflow
+  - _self_
+
+project:
+  name: cyrillic-htr
+  seed: 42
+
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  job:
+    chdir: false

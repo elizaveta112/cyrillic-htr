@@ -1,0 +1,16 @@
+batch_size: 32
+num_workers: 2
+epochs: 50
+learning_rate: 0.0001
+weight_decay: 0.00001
+
+device: cuda
+mixed_precision: true
+
+save_dir: /content/drive/MyDrive/cyrillic_htr/models
+log_dir: /content/drive/MyDrive/cyrillic_htr/logs
+
+best_metric: val_cer
+minimize_metric: true
+
+mlflow_experiment_name: cyrillic-htr-colab

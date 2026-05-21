@@ -1,0 +1,12 @@
+name: transformer_htr
+
+image_channels: 1
+image_height: 64
+
+d_model: 256
+encoder_layers: 4
+decoder_layers: 4
+n_heads: 8
+dropout: 0.1
+
+vocab_path: data/processed/vocab.json

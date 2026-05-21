@@ -1,0 +1,16 @@
+name: crnn_ctc
+
+image_channels: 1
+image_height: 64
+
+rnn_hidden_size: 256
+rnn_num_layers: 2
+bidirectional: true
+dropout: 0.1
+
+vocab_path: data/processed/vocab.json
+blank_idx: 0
+
+ctc:
+  reduction: mean
+  zero_infinity: true

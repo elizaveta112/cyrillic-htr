@@ -1,0 +1,7 @@
+checkpoint_path: models/best.pt
+vocab_path: data/processed/vocab.json
+
+image_height: 64
+max_width: 512
+
+device: auto
