@@ -1,0 +1,6 @@
+[core]
+    remote = data_remote
+['remote "data_remote"']
+    url = ../../dvc-storage/cyrillic-htr-data
+['remote "models_remote"']
+    url = ../../dvc-storage/cyrillic-htr-models

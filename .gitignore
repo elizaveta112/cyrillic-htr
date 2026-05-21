@@ -50,3 +50,6 @@ Thumbs.db
 
 # Hydra outputs
 outputs/
+
+# DVC temporary files
+*.dvc.tmp
