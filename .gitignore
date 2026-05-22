@@ -53,3 +53,8 @@ outputs/
 
 # DVC temporary files
 *.dvc.tmp
+
+# DVC metadata files inside data directories
+!data/raw/*.dvc
+!data/interim/*.dvc
+!data/processed/*.dvc

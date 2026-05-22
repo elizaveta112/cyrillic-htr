@@ -1,0 +1,6 @@
+outs:
+- md5: 83775eb0710bb8edb97172560fba72c8.dir
+  size: 1620670524
+  nfiles: 73832
+  hash: md5
+  path: cyrillic-handwriting-dataset

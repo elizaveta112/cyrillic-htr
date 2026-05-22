@@ -2,8 +2,11 @@ raw_dir: data/raw
 interim_dir: data/interim
 processed_dir: data/processed
 
-train_tsv: data/raw/train.tsv
-test_tsv: data/raw/test.tsv
+dataset_dir: data/raw/cyrillic-handwriting-dataset
+kaggle_dataset: constantinwerner/cyrillic-handwriting-dataset
+
+train_tsv: data/raw/cyrillic-handwriting-dataset/train.tsv
+test_tsv: data/raw/cyrillic-handwriting-dataset/test.tsv
 
 train_split_tsv: data/processed/train_split.tsv
 val_split_tsv: data/processed/val_split.tsv
@@ -16,3 +19,5 @@ max_width: 512
 
 val_size: 0.1
 random_seed: 42
+
+force_download: false
