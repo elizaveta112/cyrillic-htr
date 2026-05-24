@@ -14,6 +14,10 @@ test_split_tsv: data/processed/test_split.tsv
 
 vocab_path: data/processed/vocab.json
 
+image_column: image
+text_column: text
+tsv_has_header: false
+
 image_height: 64
 max_width: 512
 
