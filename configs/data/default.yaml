@@ -20,6 +20,8 @@ tsv_has_header: false
 
 image_height: 64
 max_width: 512
+image_mean: 0.5
+image_std: 0.5
 
 val_size: 0.1
 random_seed: 42
