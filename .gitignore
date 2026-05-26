@@ -61,3 +61,9 @@ outputs/
 
 # MLflow local database
 mlflow.db
+
+# Training plots
+!reports/figures/*.png
+
+# Local debug logs
+reports/debug/

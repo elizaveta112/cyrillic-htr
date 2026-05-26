@@ -1,4 +1,5 @@
 import subprocess
+from collections.abc import Iterable
 from pathlib import Path
 
 
@@ -12,3 +13,8 @@ def dvc_pull(target: str | Path | None = None, remote: str | None = None) -> Non
         command.extend(["-r", remote])
 
     subprocess.run(command, check=True)
+
+
+def dvc_pull_targets(targets: Iterable[str | Path], remote: str | None = None) -> None:
+    for target in targets:
+        dvc_pull(target=target, remote=remote)

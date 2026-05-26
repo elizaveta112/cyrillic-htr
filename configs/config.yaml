@@ -4,6 +4,7 @@ defaults:
   - train: local
   - infer: default
   - logger: mlflow
+  - dvc: default
   - _self_
 
 project:

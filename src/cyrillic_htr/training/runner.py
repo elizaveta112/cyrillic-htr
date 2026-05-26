@@ -3,11 +3,13 @@ from pathlib import Path
 
 import lightning as L
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
-from lightning.pytorch.loggers import MLFlowLogger
+from lightning.pytorch.loggers import CSVLogger, MLFlowLogger
 from omegaconf import DictConfig, OmegaConf
 
+from cyrillic_htr.data.dvc_utils import dvc_pull_targets
 from cyrillic_htr.data.factory import build_datamodule
 from cyrillic_htr.training.lightning_modules.crnn_ctc_module import CRNNCTCLightningModule
+from cyrillic_htr.training.plots import plot_training_metrics
 
 
 def get_git_commit_id() -> str:
@@ -24,26 +26,54 @@ def get_git_commit_id() -> str:
     return result.stdout.strip()
 
 
-def build_logger(config: DictConfig) -> MLFlowLogger | bool:
-    if not config.logger.enabled:
-        return False
+def pull_training_data(config: DictConfig) -> None:
+    if not config.dvc.enabled or not config.dvc.pull_on_train:
+        return
 
-    logger = MLFlowLogger(
-        experiment_name=config.logger.experiment_name,
-        tracking_uri=config.logger.tracking_uri,
+    dvc_pull_targets(
+        targets=config.dvc.data_targets,
+        remote=config.dvc.data_remote,
     )
-    logger.log_hyperparams(OmegaConf.to_container(config, resolve=True))
-    logger.experiment.set_tag(logger.run_id, "git_commit_id", get_git_commit_id())
 
-    return logger
+
+def build_loggers(
+    config: DictConfig,
+) -> tuple[list[CSVLogger | MLFlowLogger], CSVLogger, MLFlowLogger | None]:
+    csv_logger = CSVLogger(
+        save_dir=config.train.log_dir,
+        name="csv",
+    )
+
+    loggers: list[CSVLogger | MLFlowLogger] = [csv_logger]
+    mlflow_logger = None
+
+    if config.logger.enabled:
+        mlflow_logger = MLFlowLogger(
+            experiment_name=config.logger.experiment_name,
+            tracking_uri=config.logger.tracking_uri,
+        )
+        mlflow_logger.log_hyperparams(OmegaConf.to_container(config, resolve=True))
+        mlflow_logger.experiment.set_tag(
+            mlflow_logger.run_id,
+            "git_commit_id",
+            get_git_commit_id(),
+        )
+        loggers.append(mlflow_logger)
+
+    return loggers, csv_logger, mlflow_logger
 
 
 def train_model(config: DictConfig) -> None:
     if config.model.name != "crnn_ctc":
         raise NotImplementedError("Only CRNN + CTC training is implemented at this stage.")
 
+    pull_training_data(config)
+
     save_dir = Path(config.train.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
+
+    plots_dir = Path(config.train.plots_dir)
+    plots_dir.mkdir(parents=True, exist_ok=True)
 
     datamodule = build_datamodule(config)
     lightning_module = CRNNCTCLightningModule(config)
@@ -57,11 +87,12 @@ def train_model(config: DictConfig) -> None:
         save_last=True,
     )
 
-    logger = build_logger(config)
+    loggers, csv_logger, mlflow_logger = build_loggers(config)
 
-    callbacks = [checkpoint_callback]
-    if logger:
-        callbacks.append(LearningRateMonitor(logging_interval="step"))
+    callbacks = [
+        checkpoint_callback,
+        LearningRateMonitor(logging_interval="step"),
+    ]
 
     trainer = L.Trainer(
         max_epochs=config.train.epochs,
@@ -73,9 +104,22 @@ def train_model(config: DictConfig) -> None:
         limit_val_batches=config.train.limit_val_batches,
         limit_test_batches=config.train.limit_test_batches,
         log_every_n_steps=config.train.log_every_n_steps,
-        logger=logger,
+        logger=loggers,
         callbacks=callbacks,
     )
 
     trainer.fit(model=lightning_module, datamodule=datamodule)
     trainer.test(model=lightning_module, datamodule=datamodule, ckpt_path="best")
+
+    metrics_csv_path = Path(csv_logger.log_dir) / "metrics.csv"
+    plot_training_metrics(
+        metrics_csv_path=metrics_csv_path,
+        output_dir=plots_dir,
+    )
+
+    if mlflow_logger is not None:
+        mlflow_logger.experiment.log_artifacts(
+            run_id=mlflow_logger.run_id,
+            local_dir=str(plots_dir),
+            artifact_path="plots",
+        )

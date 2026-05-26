@@ -18,6 +18,7 @@ gradient_clip_val: 1.0
 
 save_dir: /content/drive/MyDrive/cyrillic_htr/models
 log_dir: /content/drive/MyDrive/cyrillic_htr/logs
+plots_dir: /content/drive/MyDrive/cyrillic_htr/plots
 
 best_metric: val_cer
 minimize_metric: true

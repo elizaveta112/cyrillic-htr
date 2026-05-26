@@ -1,0 +1,82 @@
+data:
+  raw_dir: data/raw
+  interim_dir: data/interim
+  processed_dir: data/processed
+  dataset_dir: data/raw/cyrillic-handwriting-dataset
+  kaggle_dataset: constantinwerner/cyrillic-handwriting-dataset
+  train_tsv: data/raw/cyrillic-handwriting-dataset/train.tsv
+  test_tsv: data/raw/cyrillic-handwriting-dataset/test.tsv
+  train_split_tsv: data/processed/train_split.tsv
+  val_split_tsv: data/processed/val_split.tsv
+  test_split_tsv: data/processed/test_split.tsv
+  vocab_path: data/processed/vocab.json
+  image_column: image
+  text_column: text
+  tsv_has_header: false
+  image_height: 64
+  max_width: 512
+  image_mean: 0.5
+  image_std: 0.5
+  val_size: 0.1
+  random_seed: 42
+  force_download: false
+model:
+  name: crnn_ctc
+  image_channels: 1
+  image_height: 64
+  rnn_hidden_size: 256
+  rnn_num_layers: 2
+  bidirectional: true
+  dropout: 0.1
+  vocab_path: data/processed/vocab.json
+  blank_idx: 0
+  ctc:
+    reduction: mean
+    zero_infinity: true
+train:
+  batch_size: 2
+  num_workers: 0
+  epochs: 1
+  learning_rate: 0.0001
+  weight_decay: 1.0e-05
+  device: cpu
+  accelerator: cpu
+  devices: 1
+  mixed_precision: false
+  precision: 32
+  limit_train_batches: 2
+  limit_val_batches: 2
+  limit_test_batches: 2
+  log_every_n_steps: 1
+  gradient_clip_val: 1.0
+  save_dir: models/debug
+  log_dir: reports/debug
+  plots_dir: reports/figures
+  best_metric: val_cer
+  minimize_metric: true
+  mlflow_experiment_name: cyrillic-htr-local-debug
+infer:
+  checkpoint_path: models/best.pt
+  vocab_path: data/processed/vocab.json
+  image_height: 64
+  max_width: 512
+  device: auto
+logger:
+  name: mlflow
+  enabled: false
+  tracking_uri: http://127.0.0.1:8080
+  experiment_name: cyrillic-htr
+dvc:
+  enabled: false
+  pull_on_train: true
+  pull_on_infer: true
+  data_remote: data_remote
+  models_remote: models_remote
+  data_targets:
+    - data/raw/cyrillic-handwriting-dataset.dvc
+    - data/processed.dvc
+  model_targets:
+    - models.dvc
+project:
+  name: cyrillic-htr
+  seed: 42

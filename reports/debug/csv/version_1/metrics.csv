@@ -1,0 +1,8 @@
+epoch,lr-AdamW,step,test_cer,test_edit_similarity,test_line_accuracy,test_loss,test_valid_character_rate,test_wer,train_loss_epoch,train_loss_step,val_cer,val_edit_similarity,val_line_accuracy,val_loss,val_valid_character_rate,val_wer
+,0.0001,0,,,,,,,,,,,,,,
+0,,0,,,,,,,,42.74806213378906,,,,,,
+,0.0001,1,,,,,,,,,,,,,,
+0,,1,,,,,,,,26.87311553955078,,,,,,
+0,,1,,,,,,,,,1.0,0.0,0.0,39.25459289550781,1.0,1.0
+0,,1,,,,,,,34.81058883666992,,,,,,,
+1,,2,1.0,0.0,0.0,32.59429168701172,1.0,1.0,,,,,,,,

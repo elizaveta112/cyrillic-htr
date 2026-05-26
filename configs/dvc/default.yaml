@@ -1,0 +1,13 @@
+enabled: true
+pull_on_train: true
+pull_on_infer: true
+
+data_remote: data_remote
+models_remote: models_remote
+
+data_targets:
+  - data/raw/cyrillic-handwriting-dataset.dvc
+  - data/processed.dvc
+
+model_targets:
+  - models.dvc
