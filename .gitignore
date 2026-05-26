@@ -58,3 +58,6 @@ outputs/
 !data/raw/*.dvc
 !data/interim/*.dvc
 !data/processed/*.dvc
+
+# MLflow local database
+mlflow.db
