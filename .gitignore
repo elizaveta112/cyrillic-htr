@@ -67,3 +67,6 @@ mlflow.db
 
 # Local debug logs
 reports/debug/
+
+# Colab training logs
+reports/colab/

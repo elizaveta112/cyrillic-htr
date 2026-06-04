@@ -20,6 +20,8 @@ save_dir: /content/drive/MyDrive/cyrillic_htr/models
 log_dir: /content/drive/MyDrive/cyrillic_htr/logs
 plots_dir: /content/drive/MyDrive/cyrillic_htr/plots
 
+resume_from_checkpoint: null
+
 best_metric: val_cer
 minimize_metric: true
 

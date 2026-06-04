@@ -20,6 +20,8 @@ save_dir: models/debug
 log_dir: reports/debug
 plots_dir: reports/figures
 
+resume_from_checkpoint: null
+
 best_metric: val_cer
 minimize_metric: true
 

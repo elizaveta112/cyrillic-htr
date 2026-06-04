@@ -26,6 +26,20 @@ def get_git_commit_id() -> str:
     return result.stdout.strip()
 
 
+def get_resume_checkpoint_path(config: DictConfig) -> str | None:
+    checkpoint_path = config.train.get("resume_from_checkpoint")
+
+    if checkpoint_path in {None, "", "null"}:
+        return None
+
+    checkpoint_path = Path(checkpoint_path)
+
+    if not checkpoint_path.exists():
+        raise FileNotFoundError(f"Resume checkpoint not found: {checkpoint_path}")
+
+    return str(checkpoint_path)
+
+
 def pull_training_data(config: DictConfig) -> None:
     if not config.dvc.enabled or not config.dvc.pull_on_train:
         return
@@ -108,7 +122,13 @@ def train_model(config: DictConfig) -> None:
         callbacks=callbacks,
     )
 
-    trainer.fit(model=lightning_module, datamodule=datamodule)
+    resume_checkpoint_path = get_resume_checkpoint_path(config)
+
+    trainer.fit(
+        model=lightning_module,
+        datamodule=datamodule,
+        ckpt_path=resume_checkpoint_path,
+    )
     trainer.test(model=lightning_module, datamodule=datamodule, ckpt_path="best")
 
     metrics_csv_path = Path(csv_logger.log_dir) / "metrics.csv"
