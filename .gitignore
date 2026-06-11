@@ -70,3 +70,18 @@ reports/debug/
 
 # Colab training logs
 reports/colab/
+
+# Keep DVC metadata for report artifacts tracked
+!reports/predictions/
+!reports/predictions/*.dvc
+!reports/metrics/
+!reports/metrics/*.dvc
+
+# DVC-tracked report artifacts: ignore generated files, keep metadata
+!reports/
+!reports/metrics/
+!reports/predictions/
+!reports/metrics/*.dvc
+!reports/predictions/*.dvc
+!reports/metrics/.gitignore
+!reports/predictions/.gitignore

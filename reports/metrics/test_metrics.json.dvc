@@ -1,0 +1,6 @@
+outs:
+- md5: 063ba10d16db0c7275863a3266ed5779
+  size: 3369
+  isexec: true
+  hash: md5
+  path: test_metrics.json
