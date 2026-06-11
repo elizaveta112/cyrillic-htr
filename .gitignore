@@ -85,3 +85,4 @@ reports/colab/
 !reports/predictions/*.dvc
 !reports/metrics/.gitignore
 !reports/predictions/.gitignore
+/models
