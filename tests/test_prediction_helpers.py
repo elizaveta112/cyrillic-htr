@@ -1,7 +1,9 @@
+import pytest
 import torch
 
 from cyrillic_htr.inference.ctc_prediction import (
     character_error_rate,
+    extract_logits,
     greedy_ctc_decode,
     word_error_rate,
 )
@@ -57,6 +59,24 @@ def test_greedy_ctc_decode_supports_batch_first_logits() -> None:
         blank_index=0,
         batch_first=True,
     ) == ["аб"]
+
+
+def test_extract_logits_from_tensor() -> None:
+    logits = torch.randn(2, 3, 4)
+
+    assert extract_logits(logits) is logits
+
+
+def test_extract_logits_from_tuple() -> None:
+    logits = torch.randn(2, 3, 4)
+    output_lengths = torch.tensor([3, 3])
+
+    assert extract_logits((logits, output_lengths)) is logits
+
+
+def test_extract_logits_rejects_invalid_output() -> None:
+    with pytest.raises(TypeError):
+        extract_logits("not logits")
 
 
 def test_character_error_rate() -> None:

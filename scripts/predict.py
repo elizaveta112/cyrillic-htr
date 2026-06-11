@@ -11,6 +11,7 @@ from cyrillic_htr.data.factory import build_datamodule
 from cyrillic_htr.inference.ctc_prediction import (
     build_index_to_token,
     character_error_rate,
+    extract_logits,
     greedy_ctc_decode,
     word_error_rate,
 )
@@ -66,7 +67,7 @@ def run_model(
     lightning_module: CRNNCTCLightningModule,
     images: torch.Tensor,
     image_widths: torch.Tensor | None,
-) -> torch.Tensor:
+) -> torch.Tensor | tuple | list | dict:
     try:
         if image_widths is not None:
             return lightning_module.model(images, image_widths)
@@ -112,11 +113,12 @@ def main(config: DictConfig) -> None:
             target_texts = get_batch_value(batch, "texts", "text")
             image_paths = get_batch_value(batch, "image_paths", "image_path")
 
-            logits = run_model(
+            model_output = run_model(
                 lightning_module=lightning_module,
                 images=images,
                 image_widths=image_widths,
             )
+            logits = extract_logits(model_output)
 
             predicted_texts = greedy_ctc_decode(
                 logits=logits,

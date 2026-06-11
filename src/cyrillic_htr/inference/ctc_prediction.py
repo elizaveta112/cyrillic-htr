@@ -10,6 +10,31 @@ def build_index_to_token(vocab_path: str | Path) -> dict[int, str]:
     return {index: token for token, index in vocab.items()}
 
 
+def extract_logits(model_output: torch.Tensor | tuple | list | dict) -> torch.Tensor:
+    if isinstance(model_output, torch.Tensor):
+        return model_output
+
+    if isinstance(model_output, (tuple, list)):
+        if not model_output:
+            raise ValueError("Model output tuple/list is empty.")
+
+        logits = model_output[0]
+
+        if not isinstance(logits, torch.Tensor):
+            raise TypeError(
+                f"First element of model output tuple/list is not a tensor: {type(logits)!r}"
+            )
+
+        return logits
+
+    if isinstance(model_output, dict):
+        for key in ("logits", "log_probs", "output"):
+            if key in model_output and isinstance(model_output[key], torch.Tensor):
+                return model_output[key]
+
+    raise TypeError(f"Unsupported model output type: {type(model_output)!r}")
+
+
 def greedy_ctc_decode(
     logits: torch.Tensor,
     index_to_token: dict[int, str],

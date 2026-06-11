@@ -1,25 +1,33 @@
 import json
+from collections.abc import Iterable
 from pathlib import Path
 
 import pandas as pd
 
 
 def build_char_vocab_from_texts(
-    texts: list[str],
+    texts: Iterable[str],
     blank_token: str = "<blank>",
 ) -> dict[str, int]:
-    clean_texts = [text for text in texts if isinstance(text, str) and text]
-
-    if not clean_texts:
-        raise ValueError("Cannot build vocabulary from empty text list.")
-
-    characters = sorted(set("".join(clean_texts)))
+    characters = sorted(set("".join(str(text) for text in texts)))
 
     vocab = {blank_token: 0}
+
     for index, character in enumerate(characters, start=1):
-        vocab[character] = index
+        if character != blank_token:
+            vocab[character] = index
 
     return vocab
+
+
+def build_vocab_from_texts(
+    texts: Iterable[str],
+    blank_token: str = "<blank>",
+) -> dict[str, int]:
+    return build_char_vocab_from_texts(
+        texts=texts,
+        blank_token=blank_token,
+    )
 
 
 def save_vocab(vocab: dict[str, int], path: str | Path) -> None:
@@ -36,10 +44,44 @@ def load_vocab(path: str | Path) -> dict[str, int]:
     if not path.exists():
         raise FileNotFoundError(f"Vocabulary file not found: {path}")
 
-    with path.open("r", encoding="utf-8") as file:
-        vocab: dict[str, int] = json.load(file)
+    with path.open(encoding="utf-8") as file:
+        return json.load(file)
 
-    return vocab
+
+def read_texts_from_tsv(
+    tsv_path: str | Path,
+    text_column: str,
+) -> list[str]:
+    tsv_path = Path(tsv_path)
+
+    if not tsv_path.exists():
+        raise FileNotFoundError(f"TSV file not found: {tsv_path}")
+
+    dataframe = pd.read_csv(
+        tsv_path,
+        sep="\t",
+        dtype=str,
+        keep_default_na=False,
+    )
+
+    if text_column in dataframe.columns:
+        return dataframe[text_column].astype(str).tolist()
+
+    headerless_dataframe = pd.read_csv(
+        tsv_path,
+        sep="\t",
+        header=None,
+        dtype=str,
+        keep_default_na=False,
+    )
+
+    if headerless_dataframe.shape[1] < 2:
+        raise ValueError(
+            f"Text column '{text_column}' not found in {tsv_path}. "
+            f"Available columns: {list(dataframe.columns)}"
+        )
+
+    return headerless_dataframe.iloc[:, 1].astype(str).tolist()
 
 
 def build_and_save_vocab_from_tsv(
@@ -48,34 +90,14 @@ def build_and_save_vocab_from_tsv(
     vocab_path: str | Path,
     blank_token: str = "<blank>",
 ) -> dict[str, int]:
-    train_split_tsv = Path(train_split_tsv)
-
-    if not train_split_tsv.exists():
-        raise FileNotFoundError(
-            f"Train split file not found: {train_split_tsv}. Run scripts/prepare_splits.py first."
-        )
-
-    dataframe = pd.read_csv(train_split_tsv, sep="\t")
-
-    if text_column not in dataframe.columns:
-        raise ValueError(
-            f"Text column '{text_column}' not found in {train_split_tsv}. "
-            f"Available columns: {list(dataframe.columns)}"
-        )
-
-    before_drop = len(dataframe)
-    dataframe = dataframe.dropna(subset=[text_column])
-    dataframe[text_column] = dataframe[text_column].astype(str)
-    dataframe = dataframe[dataframe[text_column].str.len() > 0]
-    after_drop = len(dataframe)
-
-    dropped_rows = before_drop - after_drop
-    if dropped_rows > 0:
-        print(f"Dropped rows with empty target text: {dropped_rows}")
-
-    texts = dataframe[text_column].tolist()
-
-    vocab = build_char_vocab_from_texts(texts=texts, blank_token=blank_token)
+    texts = read_texts_from_tsv(
+        tsv_path=train_split_tsv,
+        text_column=text_column,
+    )
+    vocab = build_char_vocab_from_texts(
+        texts=texts,
+        blank_token=blank_token,
+    )
     save_vocab(vocab=vocab, path=vocab_path)
 
     return vocab
