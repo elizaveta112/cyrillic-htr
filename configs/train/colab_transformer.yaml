@@ -1,0 +1,29 @@
+batch_size: 8
+num_workers: 2
+epochs: 50
+
+learning_rate: 0.0001
+weight_decay: 0.0001
+
+device: cuda
+accelerator: gpu
+devices: 1
+mixed_precision: true
+precision: 16-mixed
+
+limit_train_batches: 1.0
+limit_val_batches: 1.0
+limit_test_batches: 1.0
+
+log_every_n_steps: 20
+gradient_clip_val: 1.0
+
+save_dir: /content/drive/MyDrive/cyrillic_htr/transformer/models
+log_dir: /content/drive/MyDrive/cyrillic_htr/transformer/logs
+plots_dir: /content/drive/MyDrive/cyrillic_htr/transformer/plots
+
+resume_from_checkpoint: null
+
+best_metric: val_cer
+minimize_metric: true
+mlflow_experiment_name: cyrillic-htr-transformer-colab

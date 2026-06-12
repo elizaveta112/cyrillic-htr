@@ -9,6 +9,9 @@ from omegaconf import DictConfig, OmegaConf
 from cyrillic_htr.data.dvc_utils import dvc_pull_targets
 from cyrillic_htr.data.factory import build_datamodule
 from cyrillic_htr.training.lightning_modules.crnn_ctc_module import CRNNCTCLightningModule
+from cyrillic_htr.training.lightning_modules.transformer_htr_module import (
+    TransformerHTRLightningModule,
+)
 from cyrillic_htr.training.plots import plot_training_metrics
 
 
@@ -57,10 +60,9 @@ def build_loggers(
         save_dir=config.train.log_dir,
         name="csv",
     )
-
     loggers: list[CSVLogger | MLFlowLogger] = [csv_logger]
-    mlflow_logger = None
 
+    mlflow_logger = None
     if config.logger.enabled:
         mlflow_logger = MLFlowLogger(
             experiment_name=config.logger.experiment_name,
@@ -77,10 +79,17 @@ def build_loggers(
     return loggers, csv_logger, mlflow_logger
 
 
-def train_model(config: DictConfig) -> None:
-    if config.model.name != "crnn_ctc":
-        raise NotImplementedError("Only CRNN + CTC training is implemented at this stage.")
+def build_lightning_module(config: DictConfig) -> L.LightningModule:
+    if config.model.name == "crnn_ctc":
+        return CRNNCTCLightningModule(config)
 
+    if config.model.name == "transformer_htr":
+        return TransformerHTRLightningModule(config)
+
+    raise ValueError(f"Unknown model name: {config.model.name}")
+
+
+def train_model(config: DictConfig) -> None:
     pull_training_data(config)
 
     save_dir = Path(config.train.save_dir)
@@ -90,7 +99,7 @@ def train_model(config: DictConfig) -> None:
     plots_dir.mkdir(parents=True, exist_ok=True)
 
     datamodule = build_datamodule(config)
-    lightning_module = CRNNCTCLightningModule(config)
+    lightning_module = build_lightning_module(config)
 
     checkpoint_callback = ModelCheckpoint(
         dirpath=save_dir,
@@ -102,7 +111,6 @@ def train_model(config: DictConfig) -> None:
     )
 
     loggers, csv_logger, mlflow_logger = build_loggers(config)
-
     callbacks = [
         checkpoint_callback,
         LearningRateMonitor(logging_interval="step"),
@@ -129,6 +137,7 @@ def train_model(config: DictConfig) -> None:
         datamodule=datamodule,
         ckpt_path=resume_checkpoint_path,
     )
+
     trainer.test(model=lightning_module, datamodule=datamodule, ckpt_path="best")
 
     metrics_csv_path = Path(csv_logger.log_dir) / "metrics.csv"
