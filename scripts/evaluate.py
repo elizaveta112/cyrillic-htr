@@ -20,6 +20,19 @@ def resolve_device(config: DictConfig) -> str:
     return configured_device
 
 
+def prepare_evaluation_config(config: DictConfig) -> DictConfig:
+    """Use inference artifacts for evaluation.
+
+    The trained checkpoint must be evaluated with the same vocabulary that was
+    used during training. For exported/final models this vocabulary is stored
+    next to the checkpoint in models/vocab.json and configured via
+    infer.vocab_path.
+    """
+    prepared_config = OmegaConf.create(OmegaConf.to_container(config, resolve=True))
+    prepared_config.data.vocab_path = prepared_config.infer.vocab_path
+    return prepared_config
+
+
 def load_crnn_module_from_checkpoint(
     checkpoint_path: str | Path,
     config: DictConfig,
@@ -44,10 +57,16 @@ def pull_evaluation_artifacts(config: DictConfig) -> None:
         targets=config.dvc.data_targets,
         remote=config.dvc.data_remote,
     )
+    dvc_pull_targets(
+        targets=config.dvc.model_targets,
+        remote=config.dvc.models_remote,
+    )
 
 
 @hydra.main(version_base=None, config_path="../configs", config_name="config")
 def main(config: DictConfig) -> None:
+    config = prepare_evaluation_config(config)
+
     if config.model.name != "crnn_ctc":
         raise NotImplementedError("Only CRNN + CTC evaluation is implemented.")
 
@@ -85,6 +104,7 @@ def main(config: DictConfig) -> None:
 
     payload = {
         "checkpoint_path": str(config.infer.checkpoint_path),
+        "vocab_path": str(config.infer.vocab_path),
         "model": config.model.name,
         "metrics": metrics,
         "config": OmegaConf.to_container(config, resolve=True),
