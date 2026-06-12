@@ -1,6 +1,8 @@
 [core]
     remote = data_remote
 ['remote "data_remote"']
-    url = ../../dvc-storage/cyrillic-htr-data
+    url = gdrive://1OQUzDVEDX21GIReImU1pPX2qkyt0GSp5
+    gdrive_acknowledge_abuse = true
 ['remote "models_remote"']
-    url = ../../dvc-storage/cyrillic-htr-models
+    url = gdrive://1UC887J2WheFI_hQ7LgcKBsKuKuOFhies
+    gdrive_acknowledge_abuse = true
