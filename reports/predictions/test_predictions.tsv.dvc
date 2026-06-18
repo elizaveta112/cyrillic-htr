@@ -1,6 +1,5 @@
 outs:
-- md5: f2530ac518d1ef98f462afa99a3db53f
-  size: 175646
-  isexec: true
+- md5: 878b2c4cc8fa2466b3d0ab79b9649f3b
+  size: 244846
   hash: md5
   path: test_predictions.tsv

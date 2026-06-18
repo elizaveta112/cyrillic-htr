@@ -23,7 +23,9 @@ log_dir: /content/drive/MyDrive/cyrillic_htr/transformer/logs
 plots_dir: /content/drive/MyDrive/cyrillic_htr/transformer/plots
 
 resume_from_checkpoint: null
+init_from_checkpoint: null
 
 best_metric: val_cer
 minimize_metric: true
 mlflow_experiment_name: cyrillic-htr-transformer-colab
+save_top_k: 3

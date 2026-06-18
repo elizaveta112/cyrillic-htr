@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 
 import lightning as L
+import torch
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.loggers import CSVLogger, MLFlowLogger
 from omegaconf import DictConfig, OmegaConf
@@ -25,22 +26,46 @@ def get_git_commit_id() -> str:
         )
     except subprocess.CalledProcessError:
         return "unknown"
-
     return result.stdout.strip()
 
 
 def get_resume_checkpoint_path(config: DictConfig) -> str | None:
     checkpoint_path = config.train.get("resume_from_checkpoint")
-
     if checkpoint_path in {None, "", "null"}:
         return None
 
     checkpoint_path = Path(checkpoint_path)
-
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"Resume checkpoint not found: {checkpoint_path}")
 
     return str(checkpoint_path)
+
+
+def get_init_checkpoint_path(config: DictConfig) -> str | None:
+    checkpoint_path = config.train.get("init_from_checkpoint")
+    if checkpoint_path in {None, "", "null"}:
+        return None
+
+    checkpoint_path = Path(checkpoint_path)
+    if not checkpoint_path.exists():
+        raise FileNotFoundError(f"Initial checkpoint not found: {checkpoint_path}")
+
+    return str(checkpoint_path)
+
+
+def load_initial_weights(lightning_module: L.LightningModule, checkpoint_path: str | None) -> None:
+    if checkpoint_path is None:
+        return
+
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    state_dict = checkpoint.get("state_dict", checkpoint)
+    missing_keys, unexpected_keys = lightning_module.load_state_dict(state_dict, strict=False)
+
+    print(f"Loaded initial weights from: {checkpoint_path}")
+    if missing_keys:
+        print(f"Missing keys when loading initial weights: {missing_keys}")
+    if unexpected_keys:
+        print(f"Unexpected keys when loading initial weights: {unexpected_keys}")
 
 
 def pull_training_data(config: DictConfig) -> None:
@@ -60,9 +85,10 @@ def build_loggers(
         save_dir=config.train.log_dir,
         name="csv",
     )
-    loggers: list[CSVLogger | MLFlowLogger] = [csv_logger]
 
+    loggers: list[CSVLogger | MLFlowLogger] = [csv_logger]
     mlflow_logger = None
+
     if config.logger.enabled:
         mlflow_logger = MLFlowLogger(
             experiment_name=config.logger.experiment_name,
@@ -101,16 +127,26 @@ def train_model(config: DictConfig) -> None:
     datamodule = build_datamodule(config)
     lightning_module = build_lightning_module(config)
 
+    resume_checkpoint_path = get_resume_checkpoint_path(config)
+    init_checkpoint_path = get_init_checkpoint_path(config)
+
+    if resume_checkpoint_path is not None and init_checkpoint_path is not None:
+        raise ValueError("Use either train.resume_from_checkpoint or train.init_from_checkpoint, not both.")
+
+    if resume_checkpoint_path is None:
+        load_initial_weights(lightning_module, init_checkpoint_path)
+
     checkpoint_callback = ModelCheckpoint(
         dirpath=save_dir,
         filename="best-{epoch:02d}-{val_cer:.4f}",
         monitor=config.train.best_metric,
         mode="min" if config.train.minimize_metric else "max",
-        save_top_k=1,
+        save_top_k=int(config.train.get("save_top_k", 3)),
         save_last=True,
     )
 
     loggers, csv_logger, mlflow_logger = build_loggers(config)
+
     callbacks = [
         checkpoint_callback,
         LearningRateMonitor(logging_interval="step"),
@@ -130,15 +166,16 @@ def train_model(config: DictConfig) -> None:
         callbacks=callbacks,
     )
 
-    resume_checkpoint_path = get_resume_checkpoint_path(config)
-
     trainer.fit(
         model=lightning_module,
         datamodule=datamodule,
         ckpt_path=resume_checkpoint_path,
     )
 
-    trainer.test(model=lightning_module, datamodule=datamodule, ckpt_path="best")
+    if float(config.train.limit_test_batches) > 0:
+        trainer.test(model=lightning_module, datamodule=datamodule, ckpt_path="best")
+    else:
+        print("Skipping test loop because train.limit_test_batches=0")
 
     metrics_csv_path = Path(csv_logger.log_dir) / "metrics.csv"
     plot_training_metrics(

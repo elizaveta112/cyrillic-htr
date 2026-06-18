@@ -12,7 +12,6 @@ SUPPORTED_IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg"}
 
 def build_image_index(dataset_dir: str | Path) -> dict[str, Path]:
     dataset_dir = Path(dataset_dir)
-
     if not dataset_dir.exists():
         raise FileNotFoundError(f"Dataset directory not found: {dataset_dir}")
 
@@ -21,13 +20,11 @@ def build_image_index(dataset_dir: str | Path) -> dict[str, Path]:
         for image_path in dataset_dir.rglob("*")
         if image_path.suffix.lower() in SUPPORTED_IMAGE_SUFFIXES
     ]
-
     return {image_path.name: image_path for image_path in image_paths}
 
 
 def encode_text(text: str, vocab: dict[str, int]) -> torch.Tensor:
     unknown_characters = sorted({character for character in text if character not in vocab})
-
     if unknown_characters:
         raise ValueError(f"Text contains unknown characters: {unknown_characters}")
 
@@ -47,6 +44,7 @@ class HTRDataset(Dataset[dict[str, object]]):
         max_width: int,
         image_mean: float,
         image_std: float,
+        augment: bool = False,
     ) -> None:
         self.split_tsv = Path(split_tsv)
         self.dataset_dir = Path(dataset_dir)
@@ -57,12 +55,12 @@ class HTRDataset(Dataset[dict[str, object]]):
         self.max_width = max_width
         self.image_mean = image_mean
         self.image_std = image_std
+        self.augment = augment
 
         if not self.split_tsv.exists():
             raise FileNotFoundError(f"Split file not found: {self.split_tsv}")
 
         dataframe = pd.read_csv(self.split_tsv, sep="\t")
-
         required_columns = {self.image_column, self.text_column}
         missing_columns = required_columns - set(dataframe.columns)
         if missing_columns:
@@ -84,23 +82,19 @@ class HTRDataset(Dataset[dict[str, object]]):
 
     def _resolve_image_path(self, image_name: str) -> Path:
         direct_path = self.dataset_dir / image_name
-
         if direct_path.exists():
             return direct_path
 
         filename = Path(image_name).name
         indexed_path = self.image_index.get(filename)
-
         if indexed_path is None:
             raise FileNotFoundError(
                 f"Image '{image_name}' was not found inside dataset directory: {self.dataset_dir}"
             )
-
         return indexed_path
 
     def __getitem__(self, index: int) -> dict[str, object]:
         row = self.dataframe.iloc[index]
-
         image_name = str(row[self.image_column])
         text = str(row[self.text_column])
         image_path = self._resolve_image_path(image_name)
@@ -111,6 +105,7 @@ class HTRDataset(Dataset[dict[str, object]]):
             max_width=self.max_width,
             image_mean=self.image_mean,
             image_std=self.image_std,
+            augment=self.augment,
         )
         target = encode_text(text=text, vocab=self.vocab)
 

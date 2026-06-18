@@ -1,0 +1,6 @@
+outs:
+- md5: c8f7fda3cc2b15bed0b203413abd0419.dir
+  size: 83054537
+  nfiles: 13006
+  hash: md5
+  path: synthetic_pretrain

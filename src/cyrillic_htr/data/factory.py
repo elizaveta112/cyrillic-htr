@@ -4,6 +4,9 @@ from cyrillic_htr.data.datamodule import HTRDataModule
 
 
 def build_datamodule(config: DictConfig) -> HTRDataModule:
+    augmentation_config = config.data.get("augmentation", {})
+    augment_train = bool(augmentation_config.get("enabled", False))
+
     return HTRDataModule(
         train_split_tsv=config.data.train_split_tsv,
         val_split_tsv=config.data.val_split_tsv,
@@ -19,4 +22,5 @@ def build_datamodule(config: DictConfig) -> HTRDataModule:
         batch_size=config.train.batch_size,
         num_workers=config.train.num_workers,
         pin_memory=config.train.device == "cuda",
+        augment_train=augment_train,
     )

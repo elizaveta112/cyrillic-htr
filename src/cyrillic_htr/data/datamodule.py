@@ -24,9 +24,9 @@ class HTRDataModule(L.LightningDataModule):
         batch_size: int,
         num_workers: int,
         pin_memory: bool = False,
+        augment_train: bool = False,
     ) -> None:
         super().__init__()
-
         self.train_split_tsv = train_split_tsv
         self.val_split_tsv = val_split_tsv
         self.test_split_tsv = test_split_tsv
@@ -41,6 +41,7 @@ class HTRDataModule(L.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.pin_memory = pin_memory
+        self.augment_train = augment_train
 
         self.train_dataset: HTRDataset | None = None
         self.val_dataset: HTRDataset | None = None
@@ -48,37 +49,34 @@ class HTRDataModule(L.LightningDataModule):
 
     def setup(self, stage: str | None = None) -> None:
         if stage in {"fit", None}:
-            self.train_dataset = self._make_dataset(self.train_split_tsv)
-            self.val_dataset = self._make_dataset(self.val_split_tsv)
+            self.train_dataset = self._make_dataset(self.train_split_tsv, augment=self.augment_train)
+            self.val_dataset = self._make_dataset(self.val_split_tsv, augment=False)
 
         if stage in {"test", None}:
-            self.test_dataset = self._make_dataset(self.test_split_tsv)
+            self.test_dataset = self._make_dataset(self.test_split_tsv, augment=False)
 
         if stage == "validate":
-            self.val_dataset = self._make_dataset(self.val_split_tsv)
+            self.val_dataset = self._make_dataset(self.val_split_tsv, augment=False)
 
         if stage == "predict":
-            self.test_dataset = self._make_dataset(self.test_split_tsv)
+            self.test_dataset = self._make_dataset(self.test_split_tsv, augment=False)
 
     def train_dataloader(self) -> DataLoader:
         if self.train_dataset is None:
             raise RuntimeError("Train dataset is not initialized. Call setup('fit') first.")
-
         return self._make_dataloader(self.train_dataset, shuffle=True)
 
     def val_dataloader(self) -> DataLoader:
         if self.val_dataset is None:
             raise RuntimeError("Validation dataset is not initialized. Call setup('fit') first.")
-
         return self._make_dataloader(self.val_dataset, shuffle=False)
 
     def test_dataloader(self) -> DataLoader:
         if self.test_dataset is None:
             raise RuntimeError("Test dataset is not initialized. Call setup('test') first.")
-
         return self._make_dataloader(self.test_dataset, shuffle=False)
 
-    def _make_dataset(self, split_tsv: str | Path) -> HTRDataset:
+    def _make_dataset(self, split_tsv: str | Path, augment: bool) -> HTRDataset:
         return HTRDataset(
             split_tsv=split_tsv,
             dataset_dir=self.dataset_dir,
@@ -89,6 +87,7 @@ class HTRDataModule(L.LightningDataModule):
             max_width=self.max_width,
             image_mean=self.image_mean,
             image_std=self.image_std,
+            augment=augment,
         )
 
     def _make_dataloader(self, dataset: HTRDataset, shuffle: bool) -> DataLoader:
