@@ -1,0 +1,9 @@
+checkpoint_path: models/transformer_htr/transformer_best.ckpt
+vocab_path: models/transformer_htr/vocab.json
+output_path: models/onnx/transformer_htr_forward.onnx
+
+opset_version: 17
+batch_size: 1
+target_sequence_length: 64
+validate: true
+dynamic_axes: true
