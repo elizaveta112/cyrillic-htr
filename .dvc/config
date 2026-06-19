@@ -2,5 +2,7 @@
     remote = data_remote
 ['remote "data_remote"']
     url = gdrive://1OQUzDVEDX21GIReImU1pPX2qkyt0GSp5
+    gdrive_use_service_account = true
 ['remote "models_remote"']
     url = gdrive://1UC887J2WheFI_hQ7LgcKBsKuKuOFhies
+    gdrive_use_service_account = true
