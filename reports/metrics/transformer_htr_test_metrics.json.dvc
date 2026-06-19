@@ -1,0 +1,6 @@
+outs:
+- md5: f2d25e9c88aed4b731d0b7a177363955
+  size: 4004
+  isexec: true
+  hash: md5
+  path: transformer_htr_test_metrics.json

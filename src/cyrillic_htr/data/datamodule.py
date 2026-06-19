@@ -49,7 +49,9 @@ class HTRDataModule(L.LightningDataModule):
 
     def setup(self, stage: str | None = None) -> None:
         if stage in {"fit", None}:
-            self.train_dataset = self._make_dataset(self.train_split_tsv, augment=self.augment_train)
+            self.train_dataset = self._make_dataset(
+                self.train_split_tsv, augment=self.augment_train
+            )
             self.val_dataset = self._make_dataset(self.val_split_tsv, augment=False)
 
         if stage in {"test", None}:

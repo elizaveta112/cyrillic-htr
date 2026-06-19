@@ -86,3 +86,12 @@ reports/colab/
 !reports/metrics/.gitignore
 !reports/predictions/.gitignore
 /models
+
+# DVC-tracked report artifacts
+!reports/
+!reports/metrics/
+!reports/predictions/
+!reports/metrics/*.dvc
+!reports/predictions/*.dvc
+!reports/metrics/.gitignore
+!reports/predictions/.gitignore

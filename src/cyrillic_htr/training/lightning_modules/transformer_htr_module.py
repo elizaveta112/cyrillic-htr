@@ -18,15 +18,15 @@ from cyrillic_htr.models.factory import build_model
 
 
 def normalize_for_soft_metric(text: str) -> str:
-    text = str(text).lower().replace('ё', 'е')
+    text = str(text).lower().replace("ё", "е")
     cleaned_characters = []
     for character in text:
-        if unicodedata.category(character).startswith('P'):
-            cleaned_characters.append(' ')
+        if unicodedata.category(character).startswith("P"):
+            cleaned_characters.append(" ")
         else:
             cleaned_characters.append(character)
-    text = ''.join(cleaned_characters)
-    return re.sub(r'\s+', ' ', text).strip()
+    text = "".join(cleaned_characters)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 class TransformerHTRLightningModule(L.LightningModule):
@@ -41,10 +41,14 @@ class TransformerHTRLightningModule(L.LightningModule):
         self.characters = [
             character
             for character, _ in sorted(raw_vocab.items(), key=lambda item: item[1])
-            if character != ''
+            if character != ""
         ]
-        self.char_to_token = {character: index + 3 for index, character in enumerate(self.characters)}
-        self.token_to_char = {index + 3: character for index, character in enumerate(self.characters)}
+        self.char_to_token = {
+            character: index + 3 for index, character in enumerate(self.characters)
+        }
+        self.token_to_char = {
+            index + 3: character for index, character in enumerate(self.characters)
+        }
         self.allowed_characters = set(self.characters)
         self.model = build_model(config=config, vocab_size=len(self.characters) + 3)
         self.loss_fn = nn.CrossEntropyLoss(ignore_index=self.pad_idx)
@@ -57,7 +61,7 @@ class TransformerHTRLightningModule(L.LightningModule):
                 {character for character in text if character not in self.char_to_token},
             )
             if unknown_characters:
-                raise ValueError(f'Text contains unknown characters: {unknown_characters}')
+                raise ValueError(f"Text contains unknown characters: {unknown_characters}")
             encoded = [self.sos_idx]
             encoded.extend(self.char_to_token[character] for character in text)
             encoded.append(self.eos_idx)
@@ -88,7 +92,7 @@ class TransformerHTRLightningModule(L.LightningModule):
             character = self.token_to_char.get(token_id)
             if character is not None:
                 characters.append(character)
-        return ''.join(characters)
+        return "".join(characters)
 
     def forward(
         self,
@@ -103,27 +107,34 @@ class TransformerHTRLightningModule(L.LightningModule):
         )
 
     def training_step(self, batch: dict[str, object], batch_idx: int) -> torch.Tensor:
-        images = batch['images']
-        image_widths = batch.get('image_widths')
-        references = list(batch['texts'])
+        images = batch["images"]
+        image_widths = batch.get("image_widths")
+        references = list(batch["texts"])
         target_tokens = self.encode_texts(references, device=images.device)
         decoder_input = target_tokens[:-1]
         expected_output = target_tokens[1:]
         logits = self(images=images, target_tokens=decoder_input, image_widths=image_widths)
         loss = self.loss_fn(logits.reshape(-1, logits.size(-1)), expected_output.reshape(-1))
-        self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, batch_size=len(references))
+        self.log(
+            "train_loss",
+            loss,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=len(references),
+        )
         return loss
 
     def validation_step(self, batch: dict[str, object], batch_idx: int) -> torch.Tensor:
-        return self._shared_eval_step(batch=batch, prefix='val')
+        return self._shared_eval_step(batch=batch, prefix="val")
 
     def test_step(self, batch: dict[str, object], batch_idx: int) -> torch.Tensor:
-        return self._shared_eval_step(batch=batch, prefix='test')
+        return self._shared_eval_step(batch=batch, prefix="test")
 
     def _shared_eval_step(self, batch: dict[str, object], prefix: str) -> torch.Tensor:
-        images = batch['images']
-        image_widths = batch.get('image_widths')
-        references = list(batch['texts'])
+        images = batch["images"]
+        image_widths = batch.get("image_widths")
+        references = list(batch["texts"])
         target_tokens = self.encode_texts(references, device=images.device)
         decoder_input = target_tokens[:-1]
         expected_output = target_tokens[1:]
@@ -135,7 +146,9 @@ class TransformerHTRLightningModule(L.LightningModule):
             max_length=self.config.model.max_decoding_length,
         )
         predictions = [self.decode_tokens(sequence) for sequence in predicted_token_ids]
-        self._log_text_metrics(prefix=prefix, loss=loss, predictions=predictions, references=references)
+        self._log_text_metrics(
+            prefix=prefix, loss=loss, predictions=predictions, references=references
+        )
         return loss
 
     def _log_text_metrics(
@@ -146,17 +159,59 @@ class TransformerHTRLightningModule(L.LightningModule):
         references: list[str],
     ) -> None:
         batch_size = len(references)
-        self.log(f'{prefix}_loss', loss, on_epoch=True, prog_bar=True, batch_size=batch_size)
-        self.log(f'{prefix}_cer', character_error_rate(predictions, references), on_epoch=True, prog_bar=True, batch_size=batch_size)
-        self.log(f'{prefix}_wer', word_error_rate(predictions, references), on_epoch=True, prog_bar=True, batch_size=batch_size)
-        self.log(f'{prefix}_line_accuracy', line_accuracy(predictions, references), on_epoch=True, prog_bar=True, batch_size=batch_size)
-        self.log(f'{prefix}_edit_similarity', normalized_edit_similarity(predictions, references), on_epoch=True, prog_bar=True, batch_size=batch_size)
-        self.log(f'{prefix}_valid_character_rate', valid_character_rate(predictions, self.allowed_characters), on_epoch=True, prog_bar=True, batch_size=batch_size)
+        self.log(f"{prefix}_loss", loss, on_epoch=True, prog_bar=True, batch_size=batch_size)
+        self.log(
+            f"{prefix}_cer",
+            character_error_rate(predictions, references),
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=batch_size,
+        )
+        self.log(
+            f"{prefix}_wer",
+            word_error_rate(predictions, references),
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=batch_size,
+        )
+        self.log(
+            f"{prefix}_line_accuracy",
+            line_accuracy(predictions, references),
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=batch_size,
+        )
+        self.log(
+            f"{prefix}_edit_similarity",
+            normalized_edit_similarity(predictions, references),
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=batch_size,
+        )
+        self.log(
+            f"{prefix}_valid_character_rate",
+            valid_character_rate(predictions, self.allowed_characters),
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=batch_size,
+        )
 
         normalized_predictions = [normalize_for_soft_metric(text) for text in predictions]
         normalized_references = [normalize_for_soft_metric(text) for text in references]
-        self.log(f'{prefix}_normalized_cer', character_error_rate(normalized_predictions, normalized_references), on_epoch=True, prog_bar=True, batch_size=batch_size)
-        self.log(f'{prefix}_normalized_wer', word_error_rate(normalized_predictions, normalized_references), on_epoch=True, prog_bar=True, batch_size=batch_size)
+        self.log(
+            f"{prefix}_normalized_cer",
+            character_error_rate(normalized_predictions, normalized_references),
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=batch_size,
+        )
+        self.log(
+            f"{prefix}_normalized_wer",
+            word_error_rate(normalized_predictions, normalized_references),
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=batch_size,
+        )
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(
@@ -164,19 +219,19 @@ class TransformerHTRLightningModule(L.LightningModule):
             lr=self.config.train.learning_rate,
             weight_decay=self.config.train.weight_decay,
         )
-        scheduler_config = self.config.model.get('scheduler', {})
-        if not scheduler_config.get('enabled', False):
+        scheduler_config = self.config.model.get("scheduler", {})
+        if not scheduler_config.get("enabled", False):
             return optimizer
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
-            mode=scheduler_config.get('mode', 'min'),
-            factor=scheduler_config.get('factor', 0.5),
-            patience=scheduler_config.get('patience', 5),
+            mode=scheduler_config.get("mode", "min"),
+            factor=scheduler_config.get("factor", 0.5),
+            patience=scheduler_config.get("patience", 5),
         )
         return {
-            'optimizer': optimizer,
-            'lr_scheduler': {
-                'scheduler': scheduler,
-                'monitor': scheduler_config.get('monitor', 'val_loss'),
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "monitor": scheduler_config.get("monitor", "val_loss"),
             },
         }

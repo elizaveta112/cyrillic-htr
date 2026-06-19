@@ -25,7 +25,7 @@ class PositionalEncoding(nn.Module):
             position * div_term[: positional_encoding[:, 1::2].shape[1]],
         )
         positional_encoding = positional_encoding.unsqueeze(1)
-        self.register_buffer('pe', positional_encoding)
+        self.register_buffer("pe", positional_encoding)
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         outputs = inputs + self.scale * self.pe[: inputs.size(0)]
@@ -109,7 +109,7 @@ class TransformerHTR(nn.Module):
 
     @staticmethod
     def generate_square_subsequent_mask(size: int, device: torch.device) -> torch.Tensor:
-        return torch.triu(torch.full((size, size), float('-inf'), device=device), diagonal=1)
+        return torch.triu(torch.full((size, size), float("-inf"), device=device), diagonal=1)
 
     @staticmethod
     def make_source_padding_mask(
@@ -118,7 +118,7 @@ class TransformerHTR(nn.Module):
     ) -> torch.Tensor | None:
         if image_widths is None:
             return None
-        feature_lengths = torch.div(image_widths, 4, rounding_mode='floor') + 1
+        feature_lengths = torch.div(image_widths, 4, rounding_mode="floor") + 1
         feature_lengths = feature_lengths.clamp(min=1, max=memory_length)
         positions = torch.arange(memory_length, device=image_widths.device).unsqueeze(0)
         return positions >= feature_lengths.unsqueeze(1)

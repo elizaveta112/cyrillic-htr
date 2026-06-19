@@ -131,7 +131,9 @@ def train_model(config: DictConfig) -> None:
     init_checkpoint_path = get_init_checkpoint_path(config)
 
     if resume_checkpoint_path is not None and init_checkpoint_path is not None:
-        raise ValueError("Use either train.resume_from_checkpoint or train.init_from_checkpoint, not both.")
+        raise ValueError(
+            "Use either train.resume_from_checkpoint or train.init_from_checkpoint, not both."
+        )
 
     if resume_checkpoint_path is None:
         load_initial_weights(lightning_module, init_checkpoint_path)
