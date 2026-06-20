@@ -1,5 +1,5 @@
-checkpoint_path: models/transformer_htr/transformer_best.ckpt
-vocab_path: models/transformer_htr/vocab.json
+checkpoint_path: ${infer.checkpoint_path}
+vocab_path: ${infer.vocab_path}
 output_path: models/onnx/transformer_htr_forward.onnx
 
 opset_version: 17
