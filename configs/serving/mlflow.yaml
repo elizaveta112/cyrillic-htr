@@ -1,0 +1,24 @@
+model_path: models/mlflow/transformer_htr_pyfunc
+
+tracking_uri: http://127.0.0.1:8080
+artifact_path: transformer_htr_pyfunc
+registered_model_name: null
+log_to_tracking_server: false
+
+device: cpu
+overwrite: true
+
+host: 127.0.0.1
+port: 5001
+request_timeout_seconds: 60
+response_output_path: reports/predictions/mlflow_serving_prediction.json
+
+pip_requirements:
+  - mlflow>=3.1,<4
+  - torch>=2.12.0
+  - lightning>=2.6.1
+  - hydra-core>=1.3.2
+  - omegaconf>=2.3.0
+  - numpy>=2.4.6
+  - pandas>=2.2,<3
+  - pillow>=12.2.0
